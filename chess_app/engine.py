@@ -1,4 +1,4 @@
-
+from time import time
 BLACK = 'black'
 WHITE = 'white'
 
@@ -274,6 +274,7 @@ def is_check(board, player, skip_pieces=False, king_pos=None):
             elif board[i].lower() == 'n' and not check_knight(i, king_pos):
                 # Knights move in alternate colors
                 continue
+            # print(board[i])
             if king_pos in get_valid_moves(board, board[i], i, reverse_player(player), None, queen_bishop_check,
                                            queen_rook_check):
                 if skip_pieces:
@@ -294,35 +295,57 @@ def is_checkmate(board, player, responsible_pieces):
     if len(responsible_pieces) > 1:
         # Check involving multiple pieces cant be blocked or captured
         return True
-    target = responsible_pieces[0]
+    target_ = responsible_pieces[0]
+    targets = []
+    target_cood = get_coods(target_)
+    king_cood = get_coods(king_pos)
+    diff_cood = [target_cood[i] - king_cood[i] for i in range(2)]
+    dirn_cood = [0, 0]
+    if diff_cood[0] != 0:
+        dirn_cood[0] = (king_cood[0] - target_cood[0])/abs(king_cood[0] - target_cood[0])
+    if diff_cood[1] != 0:
+        dirn_cood[1] = (king_cood[0] - target_cood[0]) / abs(king_cood[1] - target_cood[1])
+    [x_temp, y_temp] = target_cood
+    i = target_
+    while i != king_pos:
+        # Get the path b/w piece and king to try to capture the piece or block the way
+        targets.append(i)
+        x_temp += dirn_cood[0]
+        y_temp += dirn_cood[1]
+        i = get_pos(x_temp, y_temp)
     queen_bishop_check = True
     queen_rook_check = True
-    for i in range(len(board)):
-        if board[i].lower() != 'k' and get_player(board[i]) == player:
-            if board[i].lower() == 'b' and not check_bishop(i, target):
-                continue
-            elif board[i].lower() == 'r' and not check_rook(i, target):
-                continue
-            elif board[i].lower() == 'p' and not check_pawn(i, target, reverse_player(player), True):
-                continue
-            elif board[i].lower() == 'q':
-                if check_bishop(i, target):
-                    queen_bishop_check = True
-                else:
-                    queen_bishop_check = False
-                if check_rook(i, target):
-                    queen_rook_check = True
-                else:
-                    queen_rook_check = False
-            elif board[i].lower() == 'n' and not check_knight(i, target):
-                continue
-            if target in get_valid_moves(board, board[i], i, player, None, queen_bishop_check, queen_rook_check):
-                # Some piece can capture
-                return False
-    if board[target].lower == 'n' or board[target].lower() == 'p':
-        # Pawn and Knight Checks can't be blocked
-        return True
-    # TODO Block Check
+    # The first iteration checks for capture
+    # The rest checks if check can be blocked
+    for target in targets:
+        # capture only when col is occupied by enemy
+        is_capture = get_player(board[int(target)]) == reverse_player(player)
+        for i in range(len(board)):
+            if board[i].lower() != 'k' and get_player(board[i]) == player:
+                if board[i].lower() == 'b' and not check_bishop(i, target):
+                    continue
+                elif board[i].lower() == 'r' and not check_rook(i, target):
+                    continue
+                elif board[i].lower() == 'p' and not check_pawn(i, target, player, is_capture):
+                    continue
+                elif board[i].lower() == 'n' and not check_knight(i, target):
+                    continue
+                elif board[i].lower() == 'q':
+                    if check_bishop(i, target):
+                        queen_bishop_check = True
+                    else:
+                        queen_bishop_check = False
+                    if check_rook(i, target):
+                        queen_rook_check = True
+                    else:
+                        queen_rook_check = False
+                if target in get_valid_moves(board, board[i], i, player, None, queen_bishop_check, queen_rook_check):
+                    # Some piece can capture
+                    return False
+        if board[target_].lower == 'n' or board[target_].lower() == 'p':
+            # Pawn and Knight Checks can't be blocked
+            # Since the piece can't be captured, it is checkmate
+            return True
     return True
 
 
@@ -338,20 +361,20 @@ def interface(board, player, current, target, castle, checked=False):
     if get_player(board[target]) == player:
         # Trying to capture own piece?
         return False
+
     if target in get_valid_moves(board, board[current], current, player, castle_):
         temp_board = move(board, current, target)
-        if is_check(temp_board, player, True):
-            # Move results in check
-            return False
-        return True
+        return not is_check(temp_board, player, True)
     return False
+
+
+def disp_board(board):
+    for z in range(64):
+        if z % 8 == 0:
+            print()
+        print(board[z], end=' ')
+    print()
 
 
 bo_ = "rnbqkbnrppppppppffffffffffffffffffffffffffffffffPPPPPPPPRNBQKBNR"
 
-print(bo_)
-for z in range(64):
-    if z % 8 == 0:
-        print()
-    print(bo_[z], end=' ')
-print()
