@@ -1,4 +1,4 @@
-from time import time
+
 BLACK = 'black'
 WHITE = 'white'
 
@@ -182,12 +182,13 @@ def get_valid_moves(board, piece, pos, player, castle, queen_bishop_check=True, 
             if castle and castle[player][1]:
                 if board[pos + 1] == 'f' and board[pos + 2] == 'f' and not is_check(board, player, True, pos + 1):
                     posns += [2]
-            posns += [9, 7, 1]
+            posns += [9, -7, 1]
         if can_go_left(pos):
             if castle and castle[player][0]:
-                if board[pos - 1] == 'f' and board[pos - 2] == 'f' and not is_check(board, player, True, pos - 1):
+                if board[pos - 1] == 'f' and board[pos - 2] == 'f' and board[pos - 3] == 'f' and \
+                        not is_check(board, player, True, pos - 1):
                     posns += [-2]
-            posns += [-9, -7, -1]
+            posns += [-9, 7, -1]
         for target in [i + pos for i in posns if 0 <= i + pos <= 63]:
             if get_player(board[target]) != player:
                 moves.append(target)
@@ -299,12 +300,12 @@ def is_checkmate(board, player, responsible_pieces):
     targets = []
     target_cood = get_coods(target_)
     king_cood = get_coods(king_pos)
-    diff_cood = [target_cood[i] - king_cood[i] for i in range(2)]
+    diff_cood = [king_cood[i] - target_cood[i] for i in range(2)]
     dirn_cood = [0, 0]
     if diff_cood[0] != 0:
-        dirn_cood[0] = (king_cood[0] - target_cood[0])/abs(king_cood[0] - target_cood[0])
+        dirn_cood[0] = diff_cood[0]/abs(diff_cood[0])
     if diff_cood[1] != 0:
-        dirn_cood[1] = (king_cood[0] - target_cood[0]) / abs(king_cood[1] - target_cood[1])
+        dirn_cood[1] = diff_cood[1]/abs(diff_cood[1])
     [x_temp, y_temp] = target_cood
     i = target_
     while i != king_pos:
@@ -374,7 +375,3 @@ def disp_board(board):
             print()
         print(board[z], end=' ')
     print()
-
-
-bo_ = "rnbqkbnrppppppppffffffffffffffffffffffffffffffffPPPPPPPPRNBQKBNR"
-
