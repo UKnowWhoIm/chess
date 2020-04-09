@@ -44,6 +44,66 @@ def reverse_player(player):
     return WHITE
 
 
+"""
+The following functions are used for optimizing the engine
+These are constant time functions which checks if the move can ever be legal using the basic 
+move conditions for each piece
+Similar to alpha beta optimization in minimax, these functions will never affect the final outcome, it will just 'prune'
+the unnecessary 'nodes'
+"""
+
+
+def check_bishop(current_pos, target_pos):
+    current_cood = get_coods(current_pos)
+    target_cood = get_coods(target_pos)
+    diff = [current_cood[0] - target_cood[0], current_cood[1] - target_cood[1]]
+    if abs(diff[0]) != abs(diff[1]):
+        # Bishop can only move diagonally
+        # Therefore absolute value of x diff and y diff should be same
+        return False
+    return True
+
+
+def check_rook(current_pos, target_pos):
+    current_cood = get_coods(current_pos)
+    target_cood = get_coods(target_pos)
+    diff = [current_cood[0] - target_cood[0], current_cood[1] - target_cood[1]]
+    if diff[0] != 0 and diff[1] != 0:
+        # Rook can move only vertically or horizontally
+        # Therefore either x diff or y diff should be 0
+        return False
+    return True
+
+
+def check_pawn(current_pos, target_pos, player, is_capture):
+    if player == WHITE:
+        dirn = -1
+        capture_diff = [-9, -7]
+    else:
+        dirn = 1
+        capture_diff = [7, 9]
+    if is_capture:
+        # Capture move
+        for x in capture_diff:
+            if current_pos + x == target_pos:
+                return True
+        return False
+    if dirn * (target_pos - current_pos) == 8 or dirn * (target_pos - current_pos) == 16:
+        # Normal move
+        return True
+    return False
+
+
+def check_knight(current_pos, target_pos):
+    # All of knights moves have absolute diff of [2, 1] or [1, 2]
+    current_cood = get_coods(current_pos)
+    target_cood = get_coods(target_pos)
+    abs_diff = [abs(current_cood[0] - target_cood[0]), abs(current_cood[1] - target_cood[1])]
+    if abs_diff == [1, 2] or abs_diff == [2, 1]:
+        return True
+    return False
+
+
 def generate_moves(board, pos, updation):
     moves = []
     for u in updation:
@@ -67,7 +127,7 @@ def generate_moves(board, pos, updation):
     return moves
 
 
-def get_valid_moves(board, piece, pos, player, castle):
+def get_valid_moves(board, piece, pos, player, castle, queen_bishop_check=True, queen_rook_check=True):
     moves = []
     coods = get_coods(pos)
     if piece.lower() == 'p':
@@ -142,7 +202,10 @@ def get_valid_moves(board, piece, pos, player, castle):
             rook_updation.append([1, can_go_right])
             bishop_updation += [[9, can_go_left], [-7, can_go_left]]
         if piece.lower() == 'q':
-            moves += generate_moves(board, pos, bishop_updation + rook_updation)
+            if queen_bishop_check:
+                moves += generate_moves(board, pos, bishop_updation)
+            if queen_rook_check:
+                moves += generate_moves(board, pos, rook_updation)
         elif piece.lower() == 'b':
             moves += generate_moves(board, pos, bishop_updation)
         elif piece.lower() == 'r':
@@ -189,15 +252,30 @@ def is_check(board, player, skip_pieces=False, king_pos=None):
         king_pos = find_king(board, player)
 
     pieces = []
+    queen_bishop_check = True
+    queen_rook_check = True
     for i in range(64):
-        if board[i].lower() != 'k' and get_player(board[i]) == reverse_player(player):
-            if board[i].lower() == 'b' and get_color(i) != get_color(king_pos):
-                # Bishops can only move in same color
+        if get_player(board[i]) == reverse_player(player):
+            if board[i].lower() == 'b' and not check_bishop(i, king_pos):
                 continue
-            if board[i].lower() == 'n' and get_color(i) == get_color(king_pos):
+            elif board[i].lower() == 'r' and not check_rook(i, king_pos):
+                continue
+            elif board[i].lower() == 'p' and not check_pawn(i, king_pos, reverse_player(player), True):
+                continue
+            elif board[i].lower() == 'q':
+                if check_bishop(i, king_pos):
+                    queen_bishop_check = True
+                else:
+                    queen_bishop_check = False
+                if check_rook(i, king_pos):
+                    queen_rook_check = True
+                else:
+                    queen_rook_check = False
+            elif board[i].lower() == 'n' and not check_knight(i, king_pos):
                 # Knights move in alternate colors
                 continue
-            if king_pos in get_valid_moves(board, board[i], i, reverse_player(player), None):
+            if king_pos in get_valid_moves(board, board[i], i, reverse_player(player), None, queen_bishop_check,
+                                           queen_rook_check):
                 if skip_pieces:
                     return True
                 pieces.append(i)
@@ -217,15 +295,28 @@ def is_checkmate(board, player, responsible_pieces):
         # Check involving multiple pieces cant be blocked or captured
         return True
     target = responsible_pieces[0]
+    queen_bishop_check = True
+    queen_rook_check = True
     for i in range(len(board)):
         if board[i].lower() != 'k' and get_player(board[i]) == player:
-            if board[i].lower() == 'b' and get_color(i) != get_color(target):
-                # bishop can only move through same color
+            if board[i].lower() == 'b' and not check_bishop(i, target):
                 continue
-            if board[i].lower() == 'n' and get_color(i) == get_color(target):
-                # Knights move in alternate colors
+            elif board[i].lower() == 'r' and not check_rook(i, target):
                 continue
-            if target in get_valid_moves(board, board[i], i, player, None):
+            elif board[i].lower() == 'p' and not check_pawn(i, target, reverse_player(player), True):
+                continue
+            elif board[i].lower() == 'q':
+                if check_bishop(i, target):
+                    queen_bishop_check = True
+                else:
+                    queen_bishop_check = False
+                if check_rook(i, target):
+                    queen_rook_check = True
+                else:
+                    queen_rook_check = False
+            elif board[i].lower() == 'n' and not check_knight(i, target):
+                continue
+            if target in get_valid_moves(board, board[i], i, player, None, queen_bishop_check, queen_rook_check):
                 # Some piece can capture
                 return False
     if board[target].lower == 'n' or board[target].lower() == 'p':
