@@ -82,6 +82,8 @@ def mini_max(game_state, player, maximiser, is_max, depth, alpha, beta=10**5):
 
 def get_all_legal_moves(board, player, castle, king_neighbourhood):
     moves = []
+    if king_neighbourhood is None:
+        king_neighbourhood = get_king_neighbourhood(board, player)
     for i in range(64):
         if engine.get_player(board[i]) == player:
             for move in engine.get_valid_moves(board, board[i], i, player, castle):
@@ -118,7 +120,7 @@ def get_king_neighbourhood(board, player, king_pos=None):
     return neighbourhood
 
 
-def make_move(board, player, castle, depth=4):
+def make_move(board, player, castle, depth=3):
     current_game = Game(board, castle)
     current_game.neighbourhood = {
                             engine.WHITE: get_king_neighbourhood(board, engine.WHITE),
