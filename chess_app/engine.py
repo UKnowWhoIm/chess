@@ -251,7 +251,11 @@ def get_all_moves_player(board, player, castle):
 def is_check(board, player, skip_pieces=False, king_pos=None):
     if king_pos is None:
         king_pos = find_king(board, player)
-
+        if king_pos is None:
+            # Sometimes mini_max enemy captures the king
+            # Therefore king_pos would be None
+            # return True to quickly terminate the execution of that branch
+            return True
     pieces = []
     queen_bishop_check = True
     queen_rook_check = True
@@ -350,6 +354,19 @@ def is_checkmate(board, player, responsible_pieces):
     return True
 
 
+def is_pawn_promote(pos, player):
+    if 0 <= pos <= 7 and player == WHITE:
+        return True
+    if 56 <= pos <= 63 and player == BLACK:
+        return True
+    return False
+
+
+def promote_pawn(board, pos, piece):
+    board = board[:pos] + promote_pawn + board[pos + 1:]
+    return board
+
+
 def interface(board, player, current, target, castle, checked=False):
     if checked:
         # If in check, king can't castle
@@ -375,3 +392,41 @@ def disp_board(board):
             print()
         print(board[z], end=' ')
     print()
+
+
+def post_move_prcoess(board, castle, current, target, player):
+    board = move(board, current, target)
+    if board[target].lower() == 'k':
+        if castle:
+            castle[player] = [False, False]
+        if abs(current - target) == 2:
+            # Castle
+            if current - target == 2:
+                # Queen Side
+                if player == BLACK:
+                    rook_pos = 0
+                    rook_target = 3
+                else:
+                    rook_pos = 56
+                    rook_target = 59
+            else:
+                # King side
+                if player == BLACK:
+                    rook_pos = 7
+                    rook_target = 5
+                else:
+                    rook_pos = 63
+                    rook_target = 61
+            board = move(board, rook_pos, rook_target)
+    if board[target].lower() == 'r' and castle and castle[player] != [False, False]:
+        # If rook moves, that side castle is not possible
+        if current == 0 and player == BLACK:
+            castle[player][0] = False
+        if current == 7 and player == BLACK:
+            castle[player][1] = False
+        if current == 56 and player == WHITE:
+            castle[player][0] = False
+        if current == 63 and player == WHITE:
+            castle[player][1] = False
+    return [board, castle]
+

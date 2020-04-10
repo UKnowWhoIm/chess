@@ -1,8 +1,10 @@
 if __name__ == "__main__":
     import engine
-    from time import time
+
 else:
     from . import engine
+from time import time
+from copy import copy
 
 
 class Game:
@@ -12,56 +14,58 @@ class Game:
         self.neighbourhood = neighbourhood
     
     def make_move(self, current, target, player, castle):
-        self.board = engine.move(self.board, current, target)
         self.neighbourhood = {
                             engine.WHITE: get_king_neighbourhood(self.board, engine.WHITE),
                             engine.BLACK: get_king_neighbourhood(self.board, engine.BLACK)
                             }
-        self.castle = castle
-        if self.board[target].lower() == 'k':
-            if self.castle:
-                self.castle[player] = [False, False]
-            if abs(current - target) == 2:
-                # Castle
-                if current - target == 2:
-                    # Queen Side
-                    if player == engine.BLACK:
-                        rook_pos = 0
-                        rook_target = 3
-                    else:
-                        rook_pos = 56
-                        rook_target = 59
-                else:
-                    # King side
-                    if player == engine.BLACK:
-                        rook_pos = 7
-                        rook_target = 5
-                    else:
-                        rook_pos = 63
-                        rook_target = 61
-                self.board = engine.move(self.board, rook_pos, rook_target)
-        if self.board[target].lower() == 'r' and self.castle and self.castle[player] != [False, False]:
-            # If rook moves, that side castle is not possible
-            if current == 0 and player == engine.BLACK:
-                self.castle[player][0] = False
-            if current == 7 and player == engine.BLACK:
-                self.castle[player][1] = False
-            if current == 56 and player == engine.WHITE:
-                self.castle[player][0] = False
-            if current == 63 and player == engine.WHITE:
-                self.castle[player][1] = False
+        [self.board, self.castle] = engine.post_move_prcoess(self.board, copy(castle), current, target, player)
+        if self.board[target].lower() == 'p':
+            promote_pawn = None
+            if 0 <= target <= 7 and player == engine.WHITE:
+                promote_pawn = 'Q'
+            elif 56 <= target <= 63 and player == engine.BLACK:
+                promote_pawn = 'q'
+            if promote_pawn:
+                self.board = self.board[:target] + promote_pawn + self.board[target + 1:]
 
 
-def minimax(game_state, player, is_max, depth, alpha, beta=10**5):
+def heuristic(game_state, maximiser, is_max):
+    # TODO Heuristic
+    if maximiser == engine.WHITE:
+        multiplier = -1
+    else:
+        multiplier = 1
+    piece_vals = {
+        'f': 0,
+        'p': 10,
+        'n': 40,
+        'b': 40,
+        'r': 100,
+        'q': 500,
+        'k': 10**7,
+        'P': -10,
+        'N': -40,
+        'B': -40,
+        'R': -100,
+        'Q': -500,
+        'K': -10 ** 7
+    }
+    score = 0
+    for i in range(64):
+        score += multiplier * piece_vals[game_state.board[i]]
+    return score
+
+
+def mini_max(game_state, player, maximiser, is_max, depth, alpha, beta=10**5):
     if depth == 0:
-        # TODO Heuristic
-        return 0
+        return heuristic(game_state, maximiser, is_max)
     if is_max:
         for current, target in get_all_legal_moves(game_state.board, player, game_state.castle,
                                                    game_state.neighbourhood[player]):
             new_game_state = Game(game_state.board)
             new_game_state.make_move(current, target, player, game_state.castle)
-            alpha = max(alpha, minimax(new_game_state, engine.reverse_player(player), False, depth - 1,alpha, beta))
+            alpha = max(alpha, mini_max(new_game_state, engine.reverse_player(player), maximiser,False, depth - 1,
+                                        alpha, beta))
             if beta <= alpha:
                 break
         return alpha
@@ -70,7 +74,7 @@ def minimax(game_state, player, is_max, depth, alpha, beta=10**5):
                                                    game_state.neighbourhood[player]):
             new_game_state = Game(game_state.board)
             new_game_state.make_move(current, target, player, game_state.castle)
-            beta = min(beta, minimax(new_game_state, engine.reverse_player(player), True, depth - 1, alpha, beta))
+            beta = min(beta, mini_max(new_game_state, engine.reverse_player(player), maximiser, True, depth - 1, alpha, beta))
             if beta <= alpha:
                 break
         return beta
@@ -81,7 +85,7 @@ def get_all_legal_moves(board, player, castle, king_neighbourhood):
     for i in range(64):
         if engine.get_player(board[i]) == player:
             for move in engine.get_valid_moves(board, board[i], i, player, castle):
-                if move in king_neighbourhood:
+                if king_neighbourhood and move in king_neighbourhood:
                     if engine.interface(board, player, i, move, castle):
                         moves.append([i, move])
                 else:
@@ -94,6 +98,8 @@ def get_king_neighbourhood(board, player, king_pos=None):
     # check for check is done only if piece is in neighbourhood
     if king_pos is None:
         king_pos = engine.find_king(board, player)
+        if king_pos is None:
+            return None
     neighbourhood = [king_pos]
     updations = [-8, 8]
     if engine.can_go_left(king_pos):
@@ -104,7 +110,7 @@ def get_king_neighbourhood(board, player, king_pos=None):
     for u in updations:
         i = king_pos
         i += u
-        while 0 <= i <= 64:
+        while 0 <= i <= 63:
             if engine.get_player(board[i]) != '':
                 neighbourhood.append(i)
                 break
@@ -112,7 +118,7 @@ def get_king_neighbourhood(board, player, king_pos=None):
     return neighbourhood
 
 
-def make_move(board, player, castle, depth=3):
+def make_move(board, player, castle, depth=4):
     current_game = Game(board, castle)
     current_game.neighbourhood = {
                             engine.WHITE: get_king_neighbourhood(board, engine.WHITE),
@@ -123,7 +129,7 @@ def make_move(board, player, castle, depth=3):
     for current, target in get_all_legal_moves(board, player, castle, current_game.neighbourhood[player]):
         new_game_state = Game(current_game.board)
         new_game_state.make_move(current, target, player, current_game.castle)
-        val = minimax(new_game_state, engine.reverse_player(player), False, depth - 1, alpha)
+        val = mini_max(new_game_state, engine.reverse_player(player), player, False, depth - 1, alpha)
         if val > alpha:
             alpha = val
             m_current = current
@@ -135,6 +141,21 @@ def make_move(board, player, castle, depth=3):
 if __name__ == "__main__":
     bo_ = "rnbqkbnrppppppppffffffffffffffffffffffffffffffffPPPPPPPPRNBQKBNR"
     engine.disp_board(bo_)
+    bo_ = engine.move(bo_, 52, 36)
+    bo_ = engine.move(bo_, 12, 28)
+    bo_ = engine.move(bo_, 59, 31)
+    bo_ = engine.move(bo_, 61, 34)
+    bo_ = engine.move(bo_, 8, 24)
+    a = time()
     move = make_move(bo_, engine.BLACK, None)
     bo_ = engine.move(bo_, move[0], move[1])
+    move2 = make_move(bo_, engine.WHITE, None)
+    bo_ = engine.move(bo_, move2[0], move2[1])
+    move3 = make_move(bo_, engine.BLACK, None)
+    bo_ = engine.move(bo_, move3[0], move3[1])
+    move4 = make_move(bo_, engine.WHITE, None)
+    bo_ = engine.move(bo_, move4[0], move4[1])
+    move4 = make_move(bo_, engine.WHITE, None)
+    bo_ = engine.move(bo_, move4[0], move4[1])
+    print(time() - a)
     engine.disp_board(bo_)
