@@ -15,10 +15,10 @@ def serialize_data(success, board=None, castle=None, player=None, is_check=False
         data += '\"board\":\"' + board + '\",'
         data += '\"castle\":' + json.dumps(castle) + ','
         data += '\"player\":\"' + player + '\",'
-        data += '\"is_check\":\"' + json.dumps(is_check) + '\",'
-        data += '\"pawn_promote\":\"' + json.dumps(pawn_promote) + '\",'
-        data += '\"game_over\":\"' + json.dumps(game_over) + '\",'
-        data += '\"winner\":\"' + json.dumps(winner) + "\""
+        data += '\"is_check\":' + json.dumps(is_check) + ','
+        data += '\"pawn_promote\":' + json.dumps(pawn_promote) + ','
+        data += '\"game_over\":' + json.dumps(game_over) + ','
+        data += '\"winner\":' + json.dumps(winner)
     data += '}'
     return data
 
@@ -68,6 +68,7 @@ def ai_handler(request):
     elif ai == 2:
         # Random Move
         move = random.choice(minimax.get_all_legal_moves(board, player, castle, None))
+    
     [board, castle] = engine.post_move_prcoess(board, copy(castle), move[0], move[1], player)
     if board[move[1]].lower() == 'p' and engine.is_pawn_promote(move[1], player):
         if player == engine.WHITE:
@@ -91,3 +92,9 @@ def promote_pawn(request):
             board = engine.promote_pawn(board, pawn_current, promoted_piece)
             return return_data(board, player, castle)
     return HttpResponse(serialize_data(False))
+
+
+def initialize(request):
+    board = "rnbqkbnrppppppppffffffffffffffffffffffffffffffffPPPPPPPPRNBQKBNR"
+    castle = {engine.WHITE: [True, True], engine.BLACK: [True, True]}
+    return HttpResponse(serialize_data(True, board, castle, engine.WHITE))

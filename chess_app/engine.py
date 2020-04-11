@@ -201,7 +201,7 @@ def get_valid_moves(board, piece, pos, player, castle, queen_bishop_check=True, 
             bishop_updation += [[-9, can_go_left], [7, can_go_left]]
         if can_go_right(pos):
             rook_updation.append([1, can_go_right])
-            bishop_updation += [[9, can_go_left], [-7, can_go_left]]
+            bishop_updation += [[9, can_go_right], [-7, can_go_right]]
         if piece.lower() == 'q':
             if queen_bishop_check:
                 moves += generate_moves(board, pos, bishop_updation)
