@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from . import engine
-from copy import copy
+from copy import deepcopy as copy
 import json
 from . import minimax
 import random
@@ -46,7 +46,7 @@ def move_validate(request):
     castle = data['castle']
     player = data['player']
     is_check = data['is_check']
-    if engine.interface(board, player, current, target, castle, is_check):
+    if engine.interface(board, player, current, target, copy(castle), is_check):
         [board, castle] = engine.post_move_prcoess(board, copy(castle), current, target, player)
         if board[target].lower() == 'p' and engine.is_pawn_promote(target, player):
             return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), False, True))
@@ -64,11 +64,11 @@ def ai_handler(request):
     if ai == 1:
         # mini_max and greedy(mini_max with depth 1)
         depth = int(data['depth'])
-        move = minimax.make_move(board, player, castle, depth)
+        move = minimax.make_move(board, player, copy(castle), depth)
     elif ai == 2:
         # Random Move
-        move = random.choice(minimax.get_all_legal_moves(board, player, castle, None))
-    
+        move = random.choice(minimax.get_all_legal_moves(board, player, copy(castle), None))
+    print(castle)
     [board, castle] = engine.post_move_prcoess(board, copy(castle), move[0], move[1], player)
     if board[move[1]].lower() == 'p' and engine.is_pawn_promote(move[1], player):
         if player == engine.WHITE:

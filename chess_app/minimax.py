@@ -4,7 +4,7 @@ if __name__ == "__main__":
 else:
     from . import engine
 from time import time
-from copy import copy
+from copy import deepcopy as copy
 
 
 class Game:
