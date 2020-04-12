@@ -126,8 +126,12 @@ def make_move(board, player, castle, depth=3):
                             engine.WHITE: get_king_neighbourhood(board, engine.WHITE),
                             engine.BLACK: get_king_neighbourhood(board, engine.BLACK)
                             }
+
     alpha = -10 ** 5
     m_current, m_target = None, None
+    if depth == 1:
+        # For depth = 1, to avoid illegal movement when checked, force generate assured legal moves
+        current_game.neighbourhood[player] = [i for i in range(64) if board[i]]
     for current, target in get_all_legal_moves(board, player, castle, current_game.neighbourhood[player]):
         new_game_state = Game(current_game.board)
         new_game_state.make_move(current, target, player, current_game.castle)

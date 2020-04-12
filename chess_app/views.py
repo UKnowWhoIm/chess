@@ -6,7 +6,7 @@ from . import minimax
 import random
 
 
-def serialize_data(success, board=None, castle=None, player=None, is_check=False, pawn_promote=False, game_over=False,
+def serialize_data(success, board=None, castle=None, player=None, is_check=False, pawn_promote=None, game_over=False,
                    winner=None):
     data = '{"success":'
     data += json.dumps(success)
@@ -33,7 +33,8 @@ def return_data(board, player, castle):
         if engine.is_checkmate(board, engine.reverse_player(player), check_pieces):
             game_over = True
             winner = player
-    return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), is_check, False,
+
+    return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), is_check, None,
                                        game_over, winner))
 
 
@@ -49,7 +50,7 @@ def move_validate(request):
     if engine.interface(board, player, current, target, copy(castle), is_check):
         [board, castle] = engine.post_move_prcoess(board, copy(castle), current, target, player)
         if board[target].lower() == 'p' and engine.is_pawn_promote(target, player):
-            return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), False, True))
+            return HttpResponse(serialize_data(True, board, castle, player, False, target))
         return return_data(board, player, castle)
     return HttpResponse(serialize_data(False))
 
@@ -61,6 +62,9 @@ def ai_handler(request):
     board = data['board']
     castle = data['castle']
     player = data['player']
+    if ai not in [1, 2]:
+        # Tampering
+        return HttpResponse(serialize_data(False))
     if ai == 1:
         # mini_max and greedy(mini_max with depth 1)
         depth = int(data['depth'])
@@ -68,7 +72,9 @@ def ai_handler(request):
     elif ai == 2:
         # Random Move
         move = random.choice(minimax.get_all_legal_moves(board, player, copy(castle), None))
-    print(castle)
+    if move == [None, None]:
+        # No available moves
+        return HttpResponse(serialize_data(False))
     [board, castle] = engine.post_move_prcoess(board, copy(castle), move[0], move[1], player)
     if board[move[1]].lower() == 'p' and engine.is_pawn_promote(move[1], player):
         if player == engine.WHITE:
@@ -86,9 +92,11 @@ def promote_pawn(request):
     board = data['board']
     castle = data['castle']
     player = data['player']
+    if promoted_piece.lower() not in ['q', 'b', 'n', 'r']:
+        return HttpResponse(serialize_data(False))
     if engine.get_player(board[pawn_current]) == engine.get_player(promoted_piece) and \
             engine.get_player(board[pawn_current]) == player:
-        if engine.is_pawn_promote(pawn_current, board):
+        if engine.is_pawn_promote(pawn_current, player):
             board = engine.promote_pawn(board, pawn_current, promoted_piece)
             return return_data(board, player, castle)
     return HttpResponse(serialize_data(False))

@@ -145,10 +145,10 @@ def get_valid_moves(board, piece, pos, player, castle, queen_bishop_check=True, 
         if coods[0] == initial_row and board[pos + dirn * 16] == 'f' and board[pos + dirn * 8] == 'f':
             # Double Step(initial)
             moves.append(pos + dirn * 16)
-        if board[pos + dirn * 8 - 1] != 'f' and get_player(board[pos + dirn * 8 - 1]) != player and can_go_left(pos):
+        if can_go_left(pos) and board[pos + dirn * 8 - 1] != 'f' and get_player(board[pos + dirn * 8 - 1]) != player:
             # left side capture
             moves.append(pos + dirn * 8 - 1)
-        if board[pos + dirn * 8 + 1] != 'f' and get_player(board[pos + dirn * 8 + 1]) != player and can_go_right(pos):
+        if can_go_right(pos) and board[pos + dirn * 8 + 1] != 'f' and get_player(board[pos + dirn * 8 + 1]) != player:
             # right side capture
             moves.append(pos + dirn * 8 + 1)
     elif piece.lower() == 'n':
@@ -355,6 +355,7 @@ def is_checkmate(board, player, responsible_pieces):
 
 
 def is_pawn_promote(pos, player):
+
     if 0 <= pos <= 7 and player == WHITE:
         return True
     if 56 <= pos <= 63 and player == BLACK:
@@ -363,7 +364,7 @@ def is_pawn_promote(pos, player):
 
 
 def promote_pawn(board, pos, piece):
-    board = board[:pos] + promote_pawn + board[pos + 1:]
+    board = board[:pos] + piece + board[pos + 1:]
     return board
 
 
