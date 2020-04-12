@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class ChessAppConfig(AppConfig):
+class ChessApiConfig(AppConfig):
     name = 'chess_api'

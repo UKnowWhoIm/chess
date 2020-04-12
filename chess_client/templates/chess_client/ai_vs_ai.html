@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+        <title>Custom Match</title>
+        <style>
+            body{
+                background: url('background4.jpg');
+                color: white;
+            }
+            h1{
+                margin-top: 60px;
+                text-align: center;
+                padding: 30px 30px;
+            }
+            #form div{
+                padding: 20px 20px;
+            }
+            input, select{
+                padding: 10px 10px;
+            }
+            #form{
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+            <div class="container">
+              <a class="navbar-brand" href="/">Chess</a>
+              <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                  </button>
+              <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ml-auto">
+                  <li class="nav-item">
+                    <a class="nav-link" id="match_status"href="/game.html">Quick Match</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="/contribute.html">Contribute <img height="20px" width="20px" src="GitHub-Mark-32px.png"/></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+        </nav>
+        <h1>Clash of the Titans</h1>
+        <div id="form">
+            <h3>White</h3>
+            <div>
+                <select class="input-lg" name="white_ai" onchange="toggle_depth(this.value, 'white')">
+                    <option value="1" selected>Minimax With Alpha Beta Pruning</option>
+                    <option value="1.5">Greedy</option>
+                    <option value="2">Random</option>
+                </select>
+            </div>
+            <div id="depth">
+                <input class="input-lg" type="number" name="white_depth" value="4"/>
+            </div>
+            <h3>Black</h3>
+            <div>
+                <select class="input-lg" name="black_ai" onchange="toggle_depth(this.value, 'black')">
+                    <option value="1" selected>Minimax With Alpha Beta Pruning</option>
+                    <option value="1.5">Greedy</option>
+                    <option value="2">Random</option>
+                </select>
+            </div>
+            <div id="depth">
+                <input class="input-lg" type="number" name="black_depth" value="4"/>
+            </div>
+            <button class="btn-success btn-lg" onclick="play()">Play</button>
+        </div>
+        <script>
+            function play(){
+                var white_ai = $("select[name=white_ai]").children("option:selected").val();
+                var black_ai = $("select[name=black_ai]").children("option:selected").val();
+                if(white_ai == 1.5){
+                    white_ai = 1;
+                    white_depth = 1;
+                }
+                if(black_ai == 1.5){
+                    black_ai = 1;
+                    black_depth = 1;
+                }
+                if(white_ai == 1){
+                    white_ai = 1;
+                    white_depth = $("input[name=white_depth]").val();
+                }
+                if(black_ai == 1){
+                    black_ai = 1;
+                    black_depth = $("input[name=black_depth]").val();
+                }
+                sessionStorage.clear();
+                sessionStorage.setItem('player_disabled', true);
+                sessionStorage.setItem('white_ai', white_ai);
+                sessionStorage.setItem('black_ai', black_ai);
+                sessionStorage.setItem('black_depth', black_depth);
+                sessionStorage.setItem('white_depth', white_depth);
+                window.location = '/game.html';
+            }
+            function toggle_depth(val, player){
+                if(val == 1)
+                    $("input[name="+player+"_depth").css('display', 'block');
+                else
+                    $("input[name="+player+"_depth").css('display', 'none');
+            }
+        </script>
+    </body>
+</html>

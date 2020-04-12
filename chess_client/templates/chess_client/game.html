@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+        #status{
+            text-align: center;
+            padding: 10px 10px;
+        }
+        .cell{
+            font-family: Arial, Helvetica, sans-serif;
+            height: 64px;
+            width: 74px;
+            font-size: 48px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .modal-body{
+            font-size: 32px;
+        }
+        .modal-body-item{
+            cursor: pointer;
+        }
+        .selected{
+            background-color: yellow !important;
+        }
+        .white{
+            background-color: rgb(255, 204, 153);;
+        }
+        .black{
+            background-color: rgb(204, 153, 102);
+        }
+        table{
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h1{
+        
+            text-transform: capitalize;
+            margin-top: 50px!important;
+        }
+    </style>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+    <title>Chess</title>
+  </head>
+  <body>
+      <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">New Match</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contribute.html">Contribute <img height="20px" width="20px" src="GitHub-Mark-32px.png"/></a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+    <div id="status"></div>
+    <div class="table-responsive">
+        <table class="" id='board'> 
+        </table>
+    </div>
+    <div id="promote_pawn" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Choose Piece</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-black-pieces">
+                        <div class="modal-body-item" id="q">
+                            &#x265B;
+                        </div>
+                        <div class="modal-body-item" id="r">
+                            &#x265C;
+                        </div>
+                        <div class="modal-body-item" id="b">
+                            &#x265D;
+                        </div>
+                        <div class="modal-body-item" id="n">
+                            &#x265E;
+                        </div>
+                    </div>
+                    <div id="modal-white-pieces">
+                        <div class="modal-body-item" id="Q">
+                            &#x2655;
+                        </div>
+                        <div class="modal-body-item" id="R">
+                            &#x2656;
+                        </div>
+                        <div class="modal-body-item" id="B">
+                            &#x2657;
+                        </div>
+                        <div class="modal-body-item" id="N">
+                            &#x2658;
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            
+            </div>
+    
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity=""></script>
+    <!-- Popper.js, then Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script>
+        base_server_url = "http://127.0.0.1:8000/api/";
+        selected_piece = '';
+        function parse_board(board){
+            parsed_board = [];
+            var names = {
+            'K': "&#x2654;",
+            'Q': "&#x2655;",
+            'R': "&#x2656;",
+            'B': "&#x2657;",
+            'N': "&#x2658;",
+            'P': "&#x2659;",
+            'k': "&#x265A;",
+            'q': "&#x265B;",
+            'r': "&#x265C;",
+            'b': "&#x265D;",
+            'n': "&#x265E;",
+            'p': "&#x265F;",
+            'f': ''
+            }
+            for(var i=0;i<64;i++)
+                parsed_board[i] = names[board[i]];
+            return parsed_board;
+        }
+        function  get_color(pos){
+            x = Math.floor(pos/8);
+            y = pos % 8;
+            if ((x + y)% 2 == 0)
+                return "white"
+            return "black"
+        }
+        function update_table(board){
+            data = '<tr>'
+                    for(var i=0;i<64;i++){
+                        if(i % 8 == 0 && i != 0)
+                            data += "</tr><tr>";
+                        data += "<td class=\'"+get_color(i)+" cell\' id=\'"+i+"\'>";
+                        data += board[i]
+                        data += "</td>"
+                    }
+            data += "<tr>"
+            $('#board').html(data);
+        }
+        function show_status(){
+            var game_status = JSON.parse(sessionStorage.getItem('game_data'));
+            var status;
+            if(!game_status.game_over){
+                status = "<h1>" + game_status.player + "\'s Turn</h1>";
+                if(game_status.is_check)
+                    // if is_check
+                    status += "<h2>You Are In Check</h2>";
+            }
+            else
+                // game is over
+                if(game_status.winner)
+                    // If there is a winner
+                    status = "<h1>" + game_status.winner + " Has Won</h1>";
+                else
+                    // game is tied
+                    status = "<h1>Game is Tied</h1>";
+            $("#status").html(status)
+
+        }   
+        function generate_table(){
+            var board;
+            if(sessionStorage.game_data){
+                // game is initialized, load from sessionStorage
+                board = JSON.parse(sessionStorage.game_data).board;
+                update_table(parse_board(board));
+            }
+            else{
+                new_match();
+            }
+        }
+        function new_match(){
+            $.get(base_server_url + 'initialize', function(data){
+                    // game isn't initialized
+                    obj = JSON.parse(data);
+                    update_table(parse_board(obj.board));
+                    delete obj.success;
+                    //console.log(obj);
+                    sessionStorage.setItem('game_data', JSON.stringify(obj));
+                    window.location.reload();
+                });      
+        }
+        function equalize_cols(){
+            cols = $(".cell");
+            for(var i = 0; i < 64; i++)
+                if(cols[i].innerHTML == '')
+                    cols[i].style ='height: 74px';
+        }
+        function call_ai(game_state){
+            if(!sessionStorage.player_disabled)
+                    ai_data = {'ai': sessionStorage.ai, 'depth': sessionStorage.ai_depth};
+                else{
+                    if(sessionStorage.player == 'white')
+                        ai_data = {'ai': sessionStorage.white_ai, 'depth': sessionStorage.white_depth};
+                    else
+                        ai_data = {'ai': sessionStorage.black_ai, 'depth': sessionStorage.black_depth};
+                }
+                var data_ = JSON.stringify(Object.assign(game_state, ai_data));
+                console.log(data_);
+                $.ajax({
+                    url: base_server_url + 'ai_move',
+                    type: 'post',
+                    data: data_,
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(new_state){
+                        delete new_state.success;
+                        update_table(parse_board(new_state.board));
+                        sessionStorage.setItem("game_data", JSON.stringify(new_state));
+                        window.location.reload();
+                    },
+                    error: function(response){
+                        alert("Invalid Request");
+                    }
+                });
+        }
+        function pawn_promotion(){
+            
+        }
+        $(document).ready(function(){
+            generate_table();
+            equalize_cols();
+            var game_state = JSON.parse(sessionStorage.game_data)
+            show_status();
+            if(sessionStorage.ai_player == game_state.player || sessionStorage.player_disabled){
+                // AI turn
+                call_ai(game_state);
+            }
+            
+            if(!sessionStorage.player_disabled){
+                if(game_state.pawn_promote){
+                    // pawn promotion
+                    $("#promote_pawn").modal('show');
+                    if(game_state.player == "white"){
+                        $("#modal-white-pieces").css('display','block');
+                        $("#modal-black-pieces").css('display','none');
+                    }
+                    else{
+                        $("#modal-white-pieces").css('display','none');
+                        $("#modal-black-pieces").css('display','block');
+                    }
+                    $(".modal-body-item").click(function(){
+                        console.log(this.id)
+                        var data_ = JSON.stringify(Object.assign(game_state, {"current": game_state.pawn_promote, "promoted_piece": this.id}));
+                        $.ajax({
+                            url: base_server_url + 'pawn_promotion',
+                                type: 'post',
+                                data: data_,
+                                contentType: 'application/json',
+                                dataType: 'json'
+                        }).done(function(new_state){
+                            if(new_state.success){
+                                delete new_state.success;
+                                update_table(parse_board(new_state.board));
+                                sessionStorage.setItem('game_data', JSON.stringify(new_state));
+                                window.location.reload();
+                            }
+                            else{
+                                alert("Invalid Request");
+                            }
+                        })
+                    });
+                }
+                else{
+                        // player turn
+                        $(".cell").click(function(){
+                            if(sessionStorage.ai_player != game_state.player){
+                                if(selected_piece != ''){
+                                    current = selected_piece;
+                                    target = this.id;
+                                    var data_ = JSON.stringify(Object.assign(game_state, {"current": current, "target": target}));
+                                    console.log(data_);
+                                    $.ajax({
+                                        url: base_server_url + 'validate_move',
+                                        type: 'post',
+                                        data: data_,
+                                        contentType: 'application/json',
+                                        dataType: 'json'
+                                    }).done(function(new_state){
+                                        if(new_state.success){
+                                            delete new_state.success;
+                                            update_table(parse_board(new_state.board));
+                                            sessionStorage.setItem('game_data', JSON.stringify(new_state));
+                                        }
+                                        else
+                                            alert("Invalid Move");
+                                        window.location.reload();
+                                    });
+                                    console.log(selected_piece);
+                                    $("#"+selected_piece).classList.remove("selected")
+                                    selected_piece = ''
+                                }
+                                else{
+                                    if(this.innerHTML != ''){
+                                        selected_piece = this.id;
+                                        this.classList.add("selected");
+                                    }
+                                }
+                            }
+                        });
+                }
+            }
+        });
+        
+    </script>
+    
+  </body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+        <title>Custom Match</title>
+        <style>
+            body{
+                background: url('background4.jpg');
+                color: white;
+            }
+            h1{
+                margin-top: 60px;
+                text-align: center;
+                padding: 30px 30px;
+            }
+            #form div{
+                padding: 20px 20px;
+            }
+            input, select{
+                padding: 10px 10px;
+            }
+            #form{
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+            <div class="container">
+              <a class="navbar-brand" href="/">Chess</a>
+              <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                  </button>
+              <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ml-auto">
+                  <li class="nav-item">
+                    <a class="nav-link" id="match_status"href="/game.html">Quick Match</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="/contribute.html">Contribute <img height="20px" width="20px" src="GitHub-Mark-32px.png"/></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </nav>
+        <h1>Choose Your Opponent</h1>
+        <div id="form">
+            <div>
+                <select class="input-lg" name="opponent" onchange="toggle_depth(this.value)">
+                    <option value="1" selected>Minimax With Alpha Beta Pruning</option>
+                    <option value="1.5">Greedy</option>
+                    <option value="2">Random</option>
+                </select>
+            </div>
+            <div id="depth">
+                <input class="input-lg" type="number" name="depth" value="4"/>
+            </div>
+            <button class="btn-success btn-lg" onclick="play()">Play</button>
+        </div>
+    </body>
+    <script>
+        $(document).ready(function(){
+            if(sessionStorage.getItem('game_data'))
+                $("#match_status").html("Continue Game")
+        });
+        function play(){
+            var ai = $("select[name=opponent]").children("option:selected").val();
+            var depth;
+            if(ai == 1.5){
+                // Greedy is mini_max with depth 1
+                ai = 1
+                depth = 1;
+            }
+            else if(ai == 1){
+                depth = $("input[name=depth]").val();
+                if(!depth || depth == '')
+                    depth = 4;
+            }
+            if(depth)
+                // depth is capped at 6
+                depth = depth > 6 ? 6 : depth;
+            console.log(depth, ai);
+            sessionStorage.clear();
+            sessionStorage.setItem('ai', ai);
+            sessionStorage.setItem('ai_depth', depth);
+            sessionStorage.setItem('ai_player', "black");
+            window.location = "/game.html";
+        }
+        function toggle_depth(val){
+            if(val == 1)
+                $("#depth").css('display', 'block');
+            else
+                $("#depth").css('display', 'none');
+        }
+
+    </script>
+</html>
