@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        {%load static%}
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -9,7 +10,7 @@
         <title>Custom Match</title>
         <style>
             body{
-                background: url('background4.jpg');
+                background: url('{%static "chess_client/background1.jpg"%}');
                 color: white;
             }
             h1{
@@ -41,7 +42,7 @@
                     <a class="nav-link" id="match_status"href="/game.html">Quick Match</a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link" href="/contribute.html">Contribute <img height="20px" width="20px" src="GitHub-Mark-32px.png"/></a>
+                    <a class="nav-link" href="https://github.com/UKnowWhoIm/chess">Contribute <img height="20px" width="20px" src="{%static 'chess_client/GitHub-Mark-32px.png'%}"/></a>
                   </li>
                 </ul>
               </div>
@@ -77,29 +78,10 @@
             function play(){
                 var white_ai = $("select[name=white_ai]").children("option:selected").val();
                 var black_ai = $("select[name=black_ai]").children("option:selected").val();
-                if(white_ai == 1.5){
-                    white_ai = 1;
-                    white_depth = 1;
-                }
-                if(black_ai == 1.5){
-                    black_ai = 1;
-                    black_depth = 1;
-                }
-                if(white_ai == 1){
-                    white_ai = 1;
-                    white_depth = $("input[name=white_depth]").val();
-                }
-                if(black_ai == 1){
-                    black_ai = 1;
-                    black_depth = $("input[name=black_depth]").val();
-                }
-                sessionStorage.clear();
-                sessionStorage.setItem('player_disabled', true);
-                sessionStorage.setItem('white_ai', white_ai);
-                sessionStorage.setItem('black_ai', black_ai);
-                sessionStorage.setItem('black_depth', black_depth);
-                sessionStorage.setItem('white_depth', white_depth);
-                window.location = '/game.html';
+                var white_depth = $("input[name=white_depth]").val();
+                var black_depth = $("input[name=black_depth]").val();
+                var url = "http://localhost:8000/new_game?type=3&&"
+                window.location = url + 'white_ai=' + white_ai + '&&black_ai=' + black_ai + '&&black_depth=' + black_depth + '&&white_depth=' + white_depth;
             }
             function toggle_depth(val, player){
                 if(val == 1)

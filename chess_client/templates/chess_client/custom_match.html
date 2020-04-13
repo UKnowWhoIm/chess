@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+    {%load static%}
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,8 +10,9 @@
         <title>Custom Match</title>
         <style>
             body{
-                background: url('background4.jpg');
+                background-image: url('{%static 'chess_client/background4.jpg'%}');
                 color: white;
+                background-size: auto;
             }
             h1{
                 margin-top: 60px;
@@ -41,7 +43,7 @@
                     <a class="nav-link" id="match_status"href="/game.html">Quick Match</a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link" href="/contribute.html">Contribute <img height="20px" width="20px" src="GitHub-Mark-32px.png"/></a>
+                    <a class="nav-link" href="https://github.com/UKnowWhoIm/chess">Contribute <img height="20px" width="20px" src="{%static 'chess_client/GitHub-Mark-32px.png'%}"/></a>
                   </li>
                 </ul>
               </div>
@@ -69,26 +71,9 @@
         });
         function play(){
             var ai = $("select[name=opponent]").children("option:selected").val();
-            var depth;
-            if(ai == 1.5){
-                // Greedy is mini_max with depth 1
-                ai = 1
-                depth = 1;
-            }
-            else if(ai == 1){
-                depth = $("input[name=depth]").val();
-                if(!depth || depth == '')
-                    depth = 4;
-            }
-            if(depth)
-                // depth is capped at 6
-                depth = depth > 6 ? 6 : depth;
-            console.log(depth, ai);
-            sessionStorage.clear();
-            sessionStorage.setItem('ai', ai);
-            sessionStorage.setItem('ai_depth', depth);
-            sessionStorage.setItem('ai_player', "black");
-            window.location = "/game.html";
+            var depth = $("input[name=depth]").val();  
+            url = "http://localhost:8000/new_game?type=1&&";
+            window.location = url + 'ai=' + ai + '&&depth=' + depth;
         }
         function toggle_depth(val){
             if(val == 1)

@@ -1,5 +1,6 @@
 .idea/*
 env/*
 db.sqlite3
-chess_app/__pycache__/*
+chess_api/__pycache__/*
+chess_client/__pycache__/*
 runserver.bat

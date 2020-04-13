@@ -41,6 +41,7 @@ def return_data(board, player, castle):
 def move_validate(request):
     # Data is served in json
     data = json.loads(request.body.decode('utf-8'))
+    print(type(data))
     board = data['board']
     current = int(data['current'])
     target = int(data['target'])
