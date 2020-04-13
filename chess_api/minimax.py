@@ -1,6 +1,5 @@
 if __name__ == "__main__":
     import engine
-
 else:
     from . import engine
 from time import time
@@ -36,11 +35,11 @@ def is_endgame(white_score, black_score, maximiser):
         diff = white_score - black_score
     if diff > 1400:
         return True
-    if white_score < (2000 + 10**7) and black_score < (2000 + 10**7):
+    if white_score < (2800 + 10**7) or black_score < (2800 + 10**7):
         return True
 
 
-def advanced_heuristic(game_state, maximiser, is_max):
+def advanced_heuristic(game_state, maximiser):
     piece_vals = {
         'f': 0,
         'p': 50,
@@ -61,9 +60,9 @@ def advanced_heuristic(game_state, maximiser, is_max):
     else:
         multiplier = 1
     score = 0
-    pawn_structure_factor = 0.5 * multiplier
-    pawn_promotion_factor = 0.5 * multiplier
-    position_factor = 1 * multiplier
+    pawn_structure_factor = 2.5
+    pawn_promotion_factor = 0.1
+    position_factor = 1
     white_material_score = 0
     black_material_score = 0
     king_pos = {engine.WHITE: None, engine.BLACK: None}
@@ -72,8 +71,10 @@ def advanced_heuristic(game_state, maximiser, is_max):
     offensive_piece_posns = []
     for i in range(64):
         score += multiplier * piece_vals[game_state.board[i]]
-        white_material_score += abs(piece_vals[game_state.board[i]])
-        black_material_score += abs(piece_vals[game_state.board[i]])
+        if engine.get_player(game_state.board[i]) == engine.WHITE:
+            white_material_score += abs(piece_vals[game_state.board[i]])
+        else:
+            black_material_score += abs(piece_vals[game_state.board[i]])
         cood = engine.get_coods(i)
         if game_state.board[i].lower() == 'p':
             pawn_positions.append(i)
@@ -81,53 +82,128 @@ def advanced_heuristic(game_state, maximiser, is_max):
             king_pos[engine.get_player(game_state.board[i])] = i
         else:
             offensive_piece_posns.append(i)
-
-    if is_endgame(white_material_score, black_material_score, maximiser):
-        for pos in pawn_positions:
-            cood = engine.get_coods(pos)
-            if engine.get_player(game_state.board[pos]) == engine.WHITE:
-                score += pawn_promotion_factor * (3 - cood[0]) * -1
-            if engine.get_player(game_state.board[pos]) == engine.BLACK:
-                score += pawn_promotion_factor * (cood[0] - 4)
-    else:
-        for pos in pawn_positions:
-            if engine.get_player(game_state.board[pos]) == engine.WHITE:
-                if engine.can_go_left(pos) and game_state.board[pos + 7].lower() == 'p':
-                    score += 5 * pawn_structure_factor * -1
-                if engine.can_go_right(pos) and game_state.board[pos + 9].lower() == 'p':
-                    score += 5 * pawn_structure_factor * -1
-            else:
-                if engine.can_go_left(pos) and game_state.board[pos - 9].lower() == 'p':
-                    score += 5 * pawn_structure_factor
-                if engine.can_go_right(pos) and game_state.board[pos - 7].lower() == 'p':
-                    score += 5 * pawn_structure_factor
-    diff = white_material_score - black_material_score
+    if king_pos[engine.BLACK] is None or king_pos[engine.WHITE] is None:
+        # King has been 'captured', Every score increment further is <<<< king's value
+        # therefore no need to compute
+        return score
+    diff = black_material_score - white_material_score
+    # maximiser params
+    max_pawn_structure_factor = pawn_structure_factor
+    max_pawn_promotion_factor = pawn_promotion_factor
+    max_position_factor = position_factor
+    # minimiser params
+    min_pawn_promotion_factor = pawn_structure_factor * -1
+    min_pawn_structure_factor = pawn_structure_factor * -1
+    min_position_factor = position_factor * -1
     if maximiser == engine.WHITE:
         diff = -diff
-    # Adjust position_factor according to game state
+    # Comments are w.r.t maximiser's position
+    # For minimizer explanation go to the reverse case
     if diff > 1500:
-        position_factor *= 10
+        # Excellent position, go full on offensive
+        max_position_factor *= 10
+
+        min_pawn_promotion_factor *= 10
+        min_pawn_structure_factor *= 4
     elif diff > 1000:
-        position_factor *= 4
+        # Very Good position, go more offensive
+        # But encourage pawns to create a defensive structure
+        max_position_factor *= 5
+        max_pawn_structure_factor *= 2
+
+        min_pawn_promotion_factor *= 6
+        min_pawn_structure_factor *= 4
+    elif diff > 500:
+        # Good position, go slightly offensive
+        # encourage pawns to create a defensive structure slightly more
+        max_position_factor *= 3
+        max_pawn_structure_factor *= 3
+
+    elif diff < -1500:
+        # Fucked Position
+        # Full Emphasis on Pawns to Advance
+        # If possible create defensive structures
+        max_pawn_promotion_factor *= 10
+        max_pawn_structure_factor *= 4
+
+        min_position_factor *= 10
+
+    elif diff < -1000:
+        # Heavily Disadvantaged Position
+        # Heavily Encourage Pawns to Advance
+        # Along With Creating Defensive Structures
+        max_pawn_promotion_factor *= 6
+        max_pawn_structure_factor *= 4
+
+        min_position_factor *= 5
+        min_pawn_structure_factor *= 2
+    elif diff < -500:
+        # Disadvantaged Position
+        # Really Encourage Pawns to Advance
+        # Along With Creating Defensive Structures
+        max_pawn_promotion_factor *= 4
+        max_pawn_structure_factor *= 4
+
+        min_position_factor *= 3
+        min_pawn_structure_factor *= 3
     elif diff < 0:
-        position_factor /= 2
+        # Slightly Disadvantaged Position
+        # Heavily Encourage Pawns to build defensive structures
+        # Slightly encourage pawns to advance
+        max_pawn_structure_factor *= 5
+        max_pawn_promotion_factor *= 2
+
+        # Slightly go on offensive
+        # Build more defensive structures
+        min_pawn_structure_factor *= 3
+        min_position_factor *= 2
+
+    promotion = {maximiser: max_pawn_promotion_factor, engine.reverse_player(maximiser): min_pawn_promotion_factor}
+    structure = {maximiser: max_pawn_structure_factor, engine.reverse_player(maximiser): min_pawn_structure_factor}
+    position = {maximiser: max_position_factor, engine.reverse_player(maximiser): min_position_factor}
+
+    for pos in pawn_positions:
+        cood = engine.get_coods(pos)
+        if engine.get_player(game_state.board[pos]) == engine.WHITE:
+            score += promotion[engine.WHITE] * (7 - cood[0])
+            if engine.can_go_left(pos) and game_state.board[pos + 7].lower() == 'p':
+                score += structure[engine.WHITE]
+            if engine.can_go_right(pos) and game_state.board[pos + 9].lower() == 'p':
+                score += structure[engine.WHITE]
+        else:
+            score += promotion[engine.BLACK] * cood[0]
+            if engine.can_go_left(pos) and game_state.board[pos - 9].lower() == 'p':
+                score += structure[engine.BLACK]
+            if engine.can_go_right(pos) and game_state.board[pos - 7].lower() == 'p':
+                score += structure[engine.BLACK]
+
+    # This boosts score for being closer to the enemy king (y -axis based)
+    black_king_cood = engine.get_coods(king_pos[engine.BLACK])
+    white_king_cood = engine.get_coods(king_pos[engine.WHITE])
+    black_pos_score = [0 for i in range(8)]
+    white_pos_score = [0 for i in range(8)]
+    black_pos_score[white_king_cood[0]] = 5
+    white_pos_score[black_king_cood[0]] = 5
+    for i in range(1, 4):
+        if black_king_cood[0] + i < 8:
+            white_pos_score[black_king_cood[0] + i] = 5 - i
+        if black_king_cood[0] - i >= 0:
+            white_pos_score[black_king_cood[0] - i] = 5 - i
+        if white_king_cood[0] + i < 8:
+            black_pos_score[white_king_cood[0] + i] = 5 - i
+        if white_king_cood[0] - i >= 0:
+            black_pos_score[white_king_cood[0] - i] = 5 - i
     for pos in offensive_piece_posns:
         cood = engine.get_coods(pos)
         if game_state.board[pos].lower() == 'n':
-            if engine.get_player(game_state.board[pos]) == engine.WHITE:
-                score += position_factor * knight_piece_score[cood[1]] * -1
-            else:
-                score += position_factor * knight_piece_score[cood[1]]
-
-            if engine.get_player(game_state.board[pos]) == engine.WHITE:
-                score += position_factor * knight_piece_score[cood[0]]
-            else:
-                score += position_factor * knight_piece_score[cood[0]] * -1
+            score += position[engine.get_player(game_state.board[pos])] * knight_piece_score[cood[1]]
+            score += position[engine.get_player(game_state.board[pos])] * knight_piece_score[cood[0]]
         else:
-            if game_state.board[pos] == engine.WHITE and cood[0] <= 4:
-                score += (cood[0] - 3) * position_factor
-            if game_state.board[pos] == engine.BLACK and cood[0] >= 3:
-                score += (cood[0] - 3) * position_factor * -1
+
+            if game_state.board[pos] == engine.WHITE:
+                score += position[engine.WHITE] * white_pos_score[cood[0]]
+            if game_state.board[pos] == engine.BLACK:
+                score += position[engine.BLACK] * black_pos_score[cood[0]]
 
     return score
 
@@ -152,14 +228,13 @@ def is_disadvantaged(board, player):
     black_score = 0
     for i in range(64):
         if engine.get_player(board[i]) == engine.WHITE:
-            white_score += abs(white_score)
+            white_score += abs(piece_vals[board[i]])
         else:
-            black_score += abs(black_score)
+            black_score += abs(piece_vals[board[i]])
     diff = black_score - white_score
     if player == engine.BLACK:
         diff = -diff
-
-    if diff > 1500:
+    if diff > 1000:
         return True
     return False
 
@@ -192,7 +267,7 @@ def heuristic(game_state, maximiser, is_max):
 
 def mini_max(game_state, player, maximiser, is_max, depth, alpha, beta=10 ** 5):
     if depth == 0:
-        return advanced_heuristic(game_state, maximiser, is_max)
+        return advanced_heuristic(game_state, maximiser)
     if is_max:
         can_move = False
         for current, target in get_all_legal_moves(game_state.board, player, game_state.castle,
@@ -301,7 +376,7 @@ def make_move(board, player, castle, depth=3):
         new_game_state = Game(current_game.board)
         new_game_state.make_move(current, target, player, current_game.castle)
         possible_games.append([new_game_state, [current, target]])
-    possible_games = sorted(possible_games, key=lambda x: advanced_heuristic(x[0], player, True), reverse=True)
+    possible_games = sorted(possible_games, key=lambda x: advanced_heuristic(x[0], player), reverse=True)
     for game, move in possible_games:
         val = mini_max(game, engine.reverse_player(player), player, False, depth - 1, alpha)
         if val > alpha:
@@ -313,7 +388,7 @@ def make_move(board, player, castle, depth=3):
 
 
 if __name__ == "__main__":
-    bo_ = "rnbqkbnrpfppppppfpffffffffffffffffffffffffffPfffPPPPfPPPRNBQKBNR"
+    bo_ = "rnbqkbnrppppppppffffffffffffffffffffffffffffPfffPPPPfPPPRNBQKBNR"
     engine.disp_board(bo_)
     """
     bo_ = engine.move(bo_, 52, 36)

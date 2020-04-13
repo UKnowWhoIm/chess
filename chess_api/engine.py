@@ -353,6 +353,17 @@ def is_checkmate(board, player, responsible_pieces):
     return True
 
 
+def is_stalemate(board, player, castle):
+    for i in range(64):
+        if get_player(board[i]) == player:
+            valid_moves = get_valid_moves(board, board[i], i, player, castle)
+            if valid_moves:
+                for move_ in valid_moves:
+                    if interface(board, player, i, move_, castle, False, True):
+                        return False
+    return True
+
+
 def is_pawn_promote(pos, player):
 
     if 0 <= pos <= 7 and player == WHITE:

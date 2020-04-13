@@ -131,7 +131,3 @@ def new_game(request):
         request.session['black_ai'] = int(ai)
         request.session['black_depth'] = depth
     return HttpResponseRedirect('/game')
-
-
-def contribute(request):
-    return HttpResponse('DD')

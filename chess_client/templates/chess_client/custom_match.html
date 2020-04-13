@@ -72,7 +72,7 @@
         function play(){
             var ai = $("select[name=opponent]").children("option:selected").val();
             var depth = $("input[name=depth]").val();  
-            url = "http://localhost:8000/new_game?type=1&&";
+            url = "{%url 'new_game'%}?type=1&&";
             window.location = url + 'ai=' + ai + '&&depth=' + depth;
         }
         function toggle_depth(val){

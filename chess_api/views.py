@@ -33,7 +33,10 @@ def return_data(board, player, castle):
         if engine.is_checkmate(board, engine.reverse_player(player), check_pieces):
             game_over = True
             winner = player
-
+    else:
+        if engine.is_stalemate(board, player, castle):
+            game_over = True
+            winner = None
     return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), is_check, None,
                                        game_over, winner))
 
@@ -78,6 +81,13 @@ def ai_handler(request):
         # No available moves
         return HttpResponse(serialize_data(False))
     [board, castle] = engine.post_move_prcoess(board, copy(castle), move[0], move[1], player)
+    if board[move[1]].lower() == 'p' and engine.is_pawn_promote(move[1], player):
+        # Promote Pawn To Queen
+        if player == engine.BLACK:
+            piece = "q"
+        else:
+            piece = "Q"
+        board = engine.promote_pawn(board, move[1], piece)
     if board[move[1]].lower() == 'p' and engine.is_pawn_promote(move[1], player):
         if player == engine.WHITE:
             piece = 'Q'

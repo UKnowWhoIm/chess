@@ -80,7 +80,7 @@
                 var black_ai = $("select[name=black_ai]").children("option:selected").val();
                 var white_depth = $("input[name=white_depth]").val();
                 var black_depth = $("input[name=black_depth]").val();
-                var url = "http://localhost:8000/new_game?type=3&&"
+                var url = "{%url 'new_game'%}?type=3&&"
                 window.location = url + 'white_ai=' + white_ai + '&&black_ai=' + black_ai + '&&black_depth=' + black_depth + '&&white_depth=' + white_depth;
             }
             function toggle_depth(val, player){
