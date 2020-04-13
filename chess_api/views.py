@@ -41,7 +41,7 @@ def return_data(board, player, castle):
 def move_validate(request):
     # Data is served in json
     data = json.loads(request.body.decode('utf-8'))
-    print(type(data))
+
     board = data['board']
     current = int(data['current'])
     target = int(data['target'])
@@ -63,6 +63,7 @@ def ai_handler(request):
     board = data['board']
     castle = data['castle']
     player = data['player']
+
     if ai not in [1, 2]:
         # Tampering
         return HttpResponse(serialize_data(False))
@@ -72,7 +73,7 @@ def ai_handler(request):
         move = minimax.make_move(board, player, copy(castle), depth)
     elif ai == 2:
         # Random Move
-        move = random.choice(minimax.get_all_legal_moves(board, player, copy(castle), None))
+        move = random.choice(minimax.get_all_legal_moves(board, player, copy(castle), False))
     if move == [None, None]:
         # No available moves
         return HttpResponse(serialize_data(False))

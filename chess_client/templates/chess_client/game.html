@@ -162,7 +162,7 @@
                 {%endif%}
             {%else%}
                 // game is over
-                {%if not request.session.winner%}
+                {%if request.session.winner == "black" or  request.session.winner == "white"%}
                     // If there is a winner
                     status = "<h1>" + "{{request.session.winner}}" + " Has Won</h1>";
                 {%else%}
@@ -173,6 +173,7 @@
             $("#status").html(status)
 
         }   
+        
         function equalize_cols(){
             cols = $(".cell");
             for(var i = 0; i < 64; i++)

@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
 import requests
+from time import time
+
 BLACK = 'black'
 WHITE = 'white'
 server = 'http://127.0.0.1:8000'
@@ -37,7 +39,7 @@ def ai_vs_ai(request):
 
 def game(request):
     if request.session.get('board', None) is None:
-        initial_data = requests.get(server+'/api/initialize').json()
+        initial_data = requests.get(server + '/api/initialize').json()
         dump_data(request, initial_data)
     return render(request, "chess_client/game.html")
 
@@ -48,7 +50,7 @@ def player_validate(request):
     if not (0 <= current <= 63 or 0 <= target <= 63):
         return HttpResponse(FAIL)
     data = pack_data(request, {'current': current, 'target': target})
-    response = requests.post(server+'/api/validate_move', json=data).json()
+    response = requests.post(server + '/api/validate_move', json=data).json()
     if response['success']:
         dump_data(request, response)
         return HttpResponse(SUCCESS)
@@ -65,7 +67,9 @@ def call_ai(request):
     ai_key_val = request.session['player'] + '_ai'
     depth_key_val = request.session['player'] + '_depth'
     data = pack_data(request, {'ai': request.session[ai_key_val], 'depth': request.session[depth_key_val]})
-    response = requests.post(server+'/api/ai_move', json=data).json()
+    # a = time()
+    response = requests.post(server + '/api/ai_move', json=data).json()
+    # print(time() - a)
     if response['success']:
         dump_data(request, response)
         return HttpResponse(SUCCESS)
@@ -76,7 +80,7 @@ def pawn_promote(request):
     if request.session['pawn_promote'] is None:
         return HttpResponse(FAIL)
     data = pack_data(request, {'current': request.session['pawn_promote'], 'promoted_piece': request.POST['piece']})
-    response = requests.post(server+'/api/pawn_promotion', json=data).json()
+    response = requests.post(server + '/api/pawn_promotion', json=data).json()
     if response['success']:
         dump_data(request, response)
         return HttpResponse(SUCCESS)
@@ -94,8 +98,8 @@ def new_game(request):
         request.session['player_disabled'] = True
         white_ai = float(request.GET.get('white_ai', 1))
         black_ai = float(request.GET.get('black_ai', 1))
-        white_depth = int(request.GET.get('black_depth', 4))
-        black_depth = int(request.GET.get('black_depth', 4))
+        white_depth = int(request.GET.get('white_depth', 3))
+        black_depth = int(request.GET.get('black_depth', 3))
 
         if white_ai == 1.5:
             white_ai = 1
@@ -104,9 +108,9 @@ def new_game(request):
             black_ai = 1
             black_depth = 1
         if not (1 <= white_depth <= 6):
-            white_depth = 4
+            white_depth = 3
         if not (1 <= black_depth <= 6):
-            black_depth = 4
+            black_depth = 3
 
         request.session['white_ai'] = int(white_ai)
         request.session['black_ai'] = int(black_ai)
@@ -115,12 +119,12 @@ def new_game(request):
     elif type_ == 1:
         # Single Player
         ai = float(request.GET.get('ai', 1))
-        depth = int(request.GET.get('depth', 4))
+        depth = int(request.GET.get('depth', 3))
 
         if ai == 1.5:
             depth = 1
-        if not (1 <= depth <= 6):
-            depth = 4
+        if not (1 <= depth <= 5):
+            depth = 3
         if ai not in [1, 2]:
             ai = 1
 

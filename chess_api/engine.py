@@ -279,7 +279,6 @@ def is_check(board, player, skip_pieces=False, king_pos=None):
             elif board[i].lower() == 'n' and not check_knight(i, king_pos):
                 # Knights move in alternate colors
                 continue
-            # print(board[i])
             if king_pos in get_valid_moves(board, board[i], i, reverse_player(player), None, queen_bishop_check,
                                            queen_rook_check):
                 if skip_pieces:
@@ -368,7 +367,7 @@ def promote_pawn(board, pos, piece):
     return board
 
 
-def interface(board, player, current, target, castle, checked=False):
+def interface(board, player, current, target, castle, checked=False, ai=False):
     if checked:
         # If in check, king can't castle
         castle_ = None
@@ -380,8 +379,10 @@ def interface(board, player, current, target, castle, checked=False):
     if get_player(board[target]) == player:
         # Trying to capture own piece?
         return False
-
-    if target in get_valid_moves(board, board[current], current, player, castle_):
+    move_is_valid = ai
+    if not move_is_valid:
+        move_is_valid = target in get_valid_moves(board, board[current], current, player, castle_)
+    if move_is_valid:
         temp_board = move(board, current, target)
         return not is_check(temp_board, player, True)
     return False
