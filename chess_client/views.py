@@ -10,7 +10,9 @@ FAIL = '300'
 SUCCESS = '200'
 
 
-def dump_data(request, response):
+def dump_data(request, response, move=None):
+    if move:
+        request.session['history'].append([request.session['board'], move])
     keys = ['board', 'player', 'castle', 'is_check', 'pawn_promote', 'game_over', 'winner']
     for key in keys:
         request.session[key] = response[key]
@@ -39,8 +41,11 @@ def ai_vs_ai(request):
 
 def game(request):
     if request.session.get('board', None) is None:
+        request.session['history'] = []
         initial_data = requests.get(server + '/api/initialize').json()
         dump_data(request, initial_data)
+    data = pack_data(request, {})
+    request.session['legal_moves'] = requests.post(server + '/api/get_all_moves', json=data).json()
     return render(request, "chess_client/game.html")
 
 
@@ -52,7 +57,7 @@ def player_validate(request):
     data = pack_data(request, {'current': current, 'target': target})
     response = requests.post(server + '/api/validate_move', json=data).json()
     if response['success']:
-        dump_data(request, response)
+        dump_data(request, response, [current, target])
         return HttpResponse(SUCCESS)
     return HttpResponse(FAIL)
 
@@ -71,7 +76,7 @@ def call_ai(request):
     response = requests.post(server + '/api/ai_move', json=data).json()
     # print(time() - a)
     if response['success']:
-        dump_data(request, response)
+        dump_data(request, response, response['move'])
         return HttpResponse(SUCCESS)
     return HttpResponse(FAIL)
 

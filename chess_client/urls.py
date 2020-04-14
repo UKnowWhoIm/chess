@@ -11,5 +11,6 @@ urlpatterns = [
     path('game', views.game, name="game"),
     path('validate', views.player_validate, name="validate"),
     path('call_ai', views.call_ai, name='call_ai'),
-    path('pawn_promote', views.pawn_promote, name='pawn_promote')
+    path('pawn_promote', views.pawn_promote, name='pawn_promote'),
+
 ]

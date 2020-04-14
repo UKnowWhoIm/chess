@@ -7,23 +7,22 @@ import random
 
 
 def serialize_data(success, board=None, castle=None, player=None, is_check=False, pawn_promote=None, game_over=False,
-                   winner=None):
-    data = '{"success":'
-    data += json.dumps(success)
+                   winner=None, additional_data=None):
+    data = {'success': success}
     if success:
-        data += ','
-        data += '\"board\":\"' + board + '\",'
-        data += '\"castle\":' + json.dumps(castle) + ','
-        data += '\"player\":\"' + player + '\",'
-        data += '\"is_check\":' + json.dumps(is_check) + ','
-        data += '\"pawn_promote\":' + json.dumps(pawn_promote) + ','
-        data += '\"game_over\":' + json.dumps(game_over) + ','
-        data += '\"winner\":' + json.dumps(winner)
-    data += '}'
-    return data
+        data['board'] = board
+        data['castle'] = castle
+        data['player'] = player
+        data['is_check'] = is_check
+        data['pawn_promote'] = pawn_promote
+        data['game_over'] = game_over
+        data['winner'] = winner
+    if additional_data:
+        data.update(additional_data)
+    return json.dumps(data)
 
 
-def return_data(board, player, castle):
+def return_data(board, player, castle, additional_data=None):
     is_check = False
     check_pieces = engine.is_check(board, engine.reverse_player(player))
     game_over = False
@@ -38,13 +37,12 @@ def return_data(board, player, castle):
             game_over = True
             winner = None
     return HttpResponse(serialize_data(True, board, castle, engine.reverse_player(player), is_check, None,
-                                       game_over, winner))
+                                       game_over, winner, additional_data))
 
 
 def move_validate(request):
     # Data is served in json
     data = json.loads(request.body.decode('utf-8'))
-
     board = data['board']
     current = int(data['current'])
     target = int(data['target'])
@@ -94,7 +92,7 @@ def ai_handler(request):
         else:
             piece = 'q'
         engine.promote_pawn(board, move[1], piece)
-    return return_data(board, player, castle)
+    return return_data(board, player, castle, {'move': move})
 
 
 def promote_pawn(request):
@@ -118,3 +116,19 @@ def initialize(request):
     board = "rnbqkbnrppppppppffffffffffffffffffffffffffffffffPPPPPPPPRNBQKBNR"
     castle = {engine.WHITE: [True, True], engine.BLACK: [True, True]}
     return HttpResponse(serialize_data(True, board, castle, engine.WHITE))
+
+
+def get_all_moves(request):
+    data = json.loads(request.body.decode('utf-8'))
+    board = data['board']
+    castle = data['castle']
+    player = data['player']
+    move_dic = {}
+    moves = minimax.get_all_legal_moves(board, player, castle, False)
+    for move in moves:
+        try:
+            move_dic[move[0]].append(move[1])
+        except KeyError:
+            move_dic[move[0]] = [move[1]]
+    return HttpResponse(json.dumps(move_dic))
+

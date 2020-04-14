@@ -1,4 +1,5 @@
 from django import template
+import json
 
 register = template.Library()
 
@@ -22,3 +23,14 @@ def print_board(board):
         data += "<td id=\'"+str(i)+"\' class=\'cell "+get_color(i)+"\'>"+board[i]+'</td>'
     data += '</tr>'
     return data
+
+
+@register.filter
+def last_moves(board):
+    move = board[-1][1]
+    return "["+str(move[0])+", "+str(move[1])+"]"
+
+
+@register.filter
+def to_json(table):
+    return json.dumps(table)

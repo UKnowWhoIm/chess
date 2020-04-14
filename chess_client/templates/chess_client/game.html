@@ -9,6 +9,7 @@
             padding: 10px 10px;
         }
         .cell{
+            border: 1px solid black !important;
             font-family: Arial, Helvetica, sans-serif;
             height: 64px;
             width: 74px;
@@ -22,8 +23,14 @@
         .modal-body-item{
             cursor: pointer;
         }
-        .selected{
+        .highlight-piece{
             background-color: yellow !important;
+        }
+        .highlight-ai{
+            background-color: rgb(252, 36, 3)!important;
+        }
+        .highlight-move{
+            background-color: rgb(105, 247, 89)!important;;
         }
         .white{
             background-color: rgb(255, 204, 153);;
@@ -43,6 +50,7 @@
         h2{
             text-transform: capitalize;
         }
+        
     </style>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -129,7 +137,7 @@
         SUCCESS = '200'
         FAIL = '300'
         selected_piece = '';
-        
+        targets = [];
         function update_table(board){
             // replace char with pieces
             var names = {
@@ -226,24 +234,40 @@
                                 if(selected_piece != ''){
                                     current = selected_piece;
                                     target = this.id;
-                
-                                    $.post("{%url 'validate'%}", {"current": current, "target": target}, function(data){
-                                        if(data == FAIL)
-                                            alert("Invalid Move");
-                                        else
-                                            location.reload();
-                                    })
-                                    $("#"+selected_piece)[0].classList.remove("selected")
+                                    if(targets.includes(parseInt(target))){
+                                        $.post("{%url 'validate'%}", {"current": current, "target": target}, function(data){
+                                            if(data == FAIL)
+                                                alert("Invalid Move");
+                                            else
+                                                location.reload();
+                                        })
+                                    }
+                                    $("#"+selected_piece)[0].classList.remove("highlight-piece")
+                                    for(var i=0; i<targets.length;i++)
+                                            $("#"+targets[i])[0].classList.remove("highlight-move")
                                     selected_piece = ''
+                                    targets = []
                                 }
                                 else{
                                     if(this.innerHTML != ''){
                                         selected_piece = this.id;
-                                        this.classList.add("selected");
+                                        this.classList.add("highlight-piece");
+                                        //highlight legal moves
+                                        var legal_moves = JSON.parse('{% autoescape off %}{{request.session.legal_moves|to_json}}{% endautoescape %}');
+                                        targets = legal_moves[this.id]
+                                        for(var i=0; i<targets.length;i++){
+                                            $("#"+targets[i])[0].classList.add("highlight-move")
+                                        }
                                     }
                                 }
                             
                             });
+                            // highlight ai move
+                            cols = {{request.session.history|last_moves}};
+                            for(var i=0; i<2;i++)
+                                $("#"+cols[i])[0].classList.add('highlight-ai')
+                            
+
                     {%endif%}
                 {%endif%}
             {%endif%}
