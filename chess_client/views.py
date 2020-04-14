@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
 import requests
+import os
 from time import time
 
 BLACK = 'black'
 WHITE = 'white'
-server = 'http://127.0.0.1:8000'
+server = os.environ.get("DJANGO_API_SERVER", 'http://127.0.0.1:8000')
 FAIL = '300'
 SUCCESS = '200'
 
