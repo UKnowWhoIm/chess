@@ -14,7 +14,6 @@ def get_color(pos):
 
 @register.filter
 def print_board(board):
-    print(board)
     data = '<tr>'
     for i in range(64):
         if i % 8 == 0 and i != 0:
