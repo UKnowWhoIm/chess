@@ -42,6 +42,11 @@
             margin-left: auto;
             margin-right: auto;
         }
+        #white_captured, #black_captured{
+            padding: 20px 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 48px;
+        }
         h1{
             
             text-transform: capitalize;
@@ -85,6 +90,12 @@
         <table id='board'> 
             {{request.session.board|print_board|safe}}
         </table>
+    </div>
+    <div class="" id="white_captured">
+
+    </div>
+    <div class="" id="black_captured">
+
     </div>
     <div id="promote_pawn" class="modal fade" role="dialog">
         <div class="modal-dialog">
@@ -138,9 +149,7 @@
         FAIL = '300'
         selected_piece = '';
         targets = [];
-        function update_table(board){
-            // replace char with pieces
-            var names = {
+        names = {
             'K': "&#x2654;",
             'Q': "&#x2655;",
             'R': "&#x2656;",
@@ -155,11 +164,17 @@
             'p': "&#x265F;",
             'f': ''
             }
+        white_captured = {%autoescape off%}{{request.session.white_captured}}{%endautoescape%};
+        black_captured = {%autoescape off%}{{request.session.black_captured}}{%endautoescape%};
+        function update_table(board){
+            // replace char with pieces
+
             var cells = $('.cell');
             for(var i=0; i < 64; i++){
                 cells[i].innerHTML = names[cells[i].innerHTML];
             }
         }
+
         function show_status(){
             var status;
             {%if not request.session.game_over%}
@@ -202,6 +217,15 @@
             update_table();
             equalize_cols();
             show_status();
+
+            var white_html = '';
+            var black_html = ''
+            for(var i=0;i<white_captured.length;i++)
+                white_html += "<span class='captured-piece'>" + names[white_captured[i]] + '</span>';
+            for(var i=0;i<black_captured.length;i++)
+                black_html += "<span class='captured-piece'>" + names[black_captured[i]] + '</span>';
+            $("#white_captured").html(white_html);
+            $("#black_captured").html(black_html);
             {% if not request.session.game_over %}
                 {% if request.session.player_disabled or request.session.player == 'black' and not request.session.ai_disabled%}
                     // AI turn
@@ -234,17 +258,20 @@
                                 if(selected_piece != ''){
                                     current = selected_piece;
                                     target = this.id;
-                                    if(targets.includes(parseInt(target))){
-                                        $.post("{%url 'validate'%}", {"current": current, "target": target}, function(data){
-                                            if(data == FAIL)
-                                                alert("Invalid Move");
-                                            else
-                                                location.reload();
-                                        })
+                                    if(targets){
+                                        if(targets.includes(parseInt(target))){
+                                            $.post("{%url 'validate'%}", {"current": current, "target": target}, function(data){
+                                                if(data == FAIL)
+                                                    alert("Invalid Move");
+                                                else
+                                                    location.reload();
+                                            })
+                                        }
+                                        for(var i=0; i<targets.length;i++)
+                                            $("#"+targets[i])[0].classList.remove("highlight-move")
                                     }
                                     $("#"+selected_piece)[0].classList.remove("highlight-piece")
-                                    for(var i=0; i<targets.length;i++)
-                                            $("#"+targets[i])[0].classList.remove("highlight-move")
+                                    
                                     selected_piece = ''
                                     targets = []
                                 }
@@ -255,9 +282,9 @@
                                         //highlight legal moves
                                         var legal_moves = JSON.parse('{% autoescape off %}{{request.session.legal_moves|to_json}}{% endautoescape %}');
                                         targets = legal_moves[this.id]
-                                        for(var i=0; i<targets.length;i++){
-                                            $("#"+targets[i])[0].classList.add("highlight-move")
-                                        }
+                                        if(targets)
+                                            for(var i=0; i<targets.length;i++)
+                                                $("#"+targets[i])[0].classList.add("highlight-move");
                                     }
                                 }
                             
@@ -265,15 +292,17 @@
                             // highlight ai move
                             cols = {{request.session.history|last_moves}};
                             for(var i=0; i<2;i++)
-                                $("#"+cols[i])[0].classList.add('highlight-ai')
+                                $("#"+cols[i])[0].classList.add('highlight-ai');
                             
 
                     {%endif%}
                 {%endif%}
             {%endif%}
+            
         });
         
     </script>
+    
     
   </body>
 </html>

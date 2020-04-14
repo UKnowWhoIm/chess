@@ -27,6 +27,8 @@ def print_board(board):
 
 @register.filter
 def last_moves(board):
+    if len(board) == 0:
+        return "null"
     move = board[-1][1]
     return "["+str(move[0])+", "+str(move[1])+"]"
 

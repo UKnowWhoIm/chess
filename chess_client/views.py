@@ -13,6 +13,9 @@ SUCCESS = '200'
 def dump_data(request, response, move=None):
     if move:
         request.session['history'].append([request.session['board'], move])
+        key_val = request.session['player'] + '_captured'
+        if request.session['history'][-1][0][move[1]] != 'f':
+            request.session[key_val].append(request.session['history'][-1][0][move[1]])
     keys = ['board', 'player', 'castle', 'is_check', 'pawn_promote', 'game_over', 'winner']
     for key in keys:
         request.session[key] = response[key]
@@ -42,6 +45,8 @@ def ai_vs_ai(request):
 def game(request):
     if request.session.get('board', None) is None:
         request.session['history'] = []
+        request.session['white_captured'] = []
+        request.session['black_captured'] = []
         initial_data = requests.get(server + '/api/initialize').json()
         dump_data(request, initial_data)
     data = pack_data(request, {})
